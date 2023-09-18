@@ -13,12 +13,14 @@ import (
 type UsersHandler struct {
 	service *services.UserService
 	tk *services.TokenService
+	perm *services.PermissionService
 }
 
 func NewUsersHandler() *UsersHandler{
 	u := services.NewUserService()
 	t := services.NewTokenService()
-	return &UsersHandler{service: u, tk: t}
+	p := services.NewPermissionService()
+	return &UsersHandler{service: u, tk: t, perm: p}
 }
 
 func (uh *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -36,20 +38,25 @@ func (uh *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := uh.service.Create(&req)
+	user, err := uh.service.Create(&req)
 	if err != nil {
 		helpers.WriteResponse(w, helpers.GenerateResponseWithError(nil, false, http.StatusBadRequest, err))
 		return
 	}
 
-	tk, err := uh.tk.New(res.ID, time.Hour*6, services.ScopeActivation)
+	tk, err := uh.tk.New(user.ID, time.Hour*6, services.ScopeActivation)
 	if err != nil {
 		helpers.WriteResponse(w, helpers.GenerateResponseWithError(nil, false, http.StatusBadRequest, err))
 		return
 	}
 
+	err = uh.perm.AddForUser(user.ID, "movies:read")
+	if err != nil {
+		helpers.WriteResponse(w, helpers.GenerateResponseWithError(nil, false, http.StatusBadRequest, err))
+		return
+	}
 
-	helpers.WriteResponse(w, helpers.GenerateResponse(map[string]interface{}{"user":res, "token":tk}, false, http.StatusBadRequest))
+	helpers.WriteResponse(w, helpers.GenerateResponse(map[string]interface{}{"user":user, "token":tk}, false, http.StatusBadRequest))
 
 
 }

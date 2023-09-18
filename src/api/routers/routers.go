@@ -13,11 +13,11 @@ func Router() http.Handler {
 	h := handlers.NewMovieHandler()
 	userHandler := handlers.NewUsersHandler()
 	tk := handlers.NewTokenHandler()
-	router.HandlerFunc(http.MethodPost, "/v1/movie", h.CreateMovie)
-	router.HandlerFunc(http.MethodPut, "/v1/movie/:id", h.UpdateMovie)
-	router.HandlerFunc(http.MethodDelete, "/v1/movie/:id", h.DeleteMovie)
-	router.HandlerFunc(http.MethodGet, "/v1/movie/:id", h.GetById)
-	router.HandlerFunc(http.MethodGet, "/v1/movie", h.GetAll)
+	router.HandlerFunc(http.MethodPost, "/v1/movie", middlewares.RequireActiveUser(h.CreateMovie))
+	router.HandlerFunc(http.MethodPut, "/v1/movie/:id", middlewares.RequireActiveUser(h.UpdateMovie))
+	router.HandlerFunc(http.MethodDelete, "/v1/movie/:id", middlewares.RequireActiveUser(h.DeleteMovie))
+	router.HandlerFunc(http.MethodGet, "/v1/movie/:id", middlewares.RequirePermission("movies:write",h.GetById))
+	router.HandlerFunc(http.MethodGet, "/v1/movie", middlewares.RequireActiveUser(h.GetAll))
 
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", userHandler.CreateUser)
@@ -29,5 +29,5 @@ func Router() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/users/reset-token", tk.ResetAccessToken)
 
 
-	return middlewares.RateLimiter(router)
+	return middlewares.RateLimiter(middlewares.Authentication(router))
 }
