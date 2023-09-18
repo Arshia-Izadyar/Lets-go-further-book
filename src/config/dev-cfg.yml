@@ -1,0 +1,12 @@
+server:
+  port: 5000
+  env: "develop"
+db:
+  dsn: "postgres://arshia:a123@localhost/greenlight2?sslmode=disable"
+  maxOpenConns: 25
+  maxIdleConns: 25
+  maxIdleTime: "15m"
+limiter:
+  rps: 2
+  burst: 4
+  enabled: true
